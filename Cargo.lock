@@ -245,6 +245,7 @@ dependencies = [
  "cosmwasm-std",
  "cw-multi-test",
  "cw-my-nameservice",
+ "cw-storage-plus 1.2.0",
  "cw721 0.19.0",
  "thiserror",
 ]
