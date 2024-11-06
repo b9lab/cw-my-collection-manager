@@ -29,3 +29,4 @@ Branches:
 * [`sudo-message`](../../tree/sudo-message), [diff](../../compare/payment-params-query..sudo-message)
 * [`migrate-function`](../../tree/migrate-function), [diff](../../compare/sudo-message..migrate-function)
 * [`ibc-channel`](../../tree/ibc-channel), [diff](../../compare/migrate-function..ibc-channel)
+* [`ibc-packet`](../../tree/ibc-packet), [diff](../../compare/ibc-channel..ibc-packet)
