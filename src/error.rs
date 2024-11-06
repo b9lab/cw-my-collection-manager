@@ -21,4 +21,8 @@ pub enum ContractError {
     ChannelAlreadyExists { channel_id: String },
     #[error("The channel cant be closed")]
     ChannelClosingNotAllowed,
+    #[error("Unkown channel {channel_id}")]
+    UnkownChannel { channel_id: String },
+    #[error("Only token owner can send on IBC")]
+    OnlyOwnerCanIBCSend,
 }

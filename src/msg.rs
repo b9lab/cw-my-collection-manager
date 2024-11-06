@@ -33,6 +33,18 @@ pub enum ExecuteMsg {
         collection: String,
         message: CollectionExecuteMsg,
     },
+    IbcTransferName {
+        collection: String,
+        token_id: String,
+        channel_id: String,
+        receiver_addr: String,
+    },
+    IbcReturnName {
+        collection: String,
+        token_id: String,
+        channel_id: String,
+        receiver_addr: String,
+    },
 }
 
 #[cw_serde]
@@ -60,4 +72,20 @@ pub enum SudoMsg {
 #[cw_serde]
 pub struct MigrateMsg {
     pub payment_params: PaymentParams,
+}
+
+#[cw_serde]
+pub enum IbcMessage {
+    TransferName {
+        collection: String,
+        token_id: String,
+        sender_addr: String,
+        receiver_addr: String,
+    },
+    ReturnName {
+        collection: String,
+        token_id: String,
+        sender_addr: String,
+        receiver_addr: String,
+    },
 }

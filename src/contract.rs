@@ -1,21 +1,25 @@
 use crate::{
     error::ContractError,
+    ibc::packet::voucher_token_id,
     msg::{
-        CollectionExecuteMsg, CollectionQueryMsg, ExecuteMsg, GetPaymentParamsResponse,
+        CollectionExecuteMsg, CollectionQueryMsg, ExecuteMsg, GetPaymentParamsResponse, IbcMessage,
         InstantiateMsg, MigrateMsg, NameServiceExecuteMsgResponse, PaymentParams, QueryMsg,
         SudoMsg,
     },
-    state::{CONTRACT_NAME, CONTRACT_VERSION, PAYMENT_PARAMS},
+    state::{
+        CONTRACT_NAME, CONTRACT_VERSION, IBC_CHANNEL_INFOS, PAYMENT_PARAMS,
+        VOUCHERS_COLLECTION_ADDR,
+    },
 };
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    from_json, to_json_binary, BankMsg, Coin, CosmosMsg, Deps, DepsMut, Empty, Env, Event,
-    MessageInfo, QueryRequest, QueryResponse, Reply, ReplyOn, Response, StdError, SubMsg, Uint128,
-    WasmMsg, WasmQuery,
+    from_json, to_json_binary, BankMsg, Coin, CosmosMsg, Deps, DepsMut, Empty, Env, Event, IbcMsg,
+    IbcTimeout, MessageInfo, QueryRequest, QueryResponse, Reply, ReplyOn, Response, StdError,
+    SubMsg, Uint128, WasmMsg, WasmQuery,
 };
 use cw2::{get_contract_version, set_contract_version, ContractVersion, VersionError};
-use cw721::msg::NumTokensResponse;
+use cw721::msg::{NumTokensResponse, OwnerOfResponse};
 
 type ContractResult = Result<Response, ContractError>;
 
@@ -52,6 +56,34 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> C
             collection,
             message,
         } => execute_pass_through(deps, env, info, collection, message),
+        ExecuteMsg::IbcTransferName {
+            collection,
+            receiver_addr,
+            token_id,
+            channel_id,
+        } => execute_ibc_tranfer(
+            deps,
+            env,
+            info,
+            collection,
+            receiver_addr,
+            token_id,
+            channel_id,
+        ),
+        ExecuteMsg::IbcReturnName {
+            collection,
+            receiver_addr,
+            token_id,
+            channel_id,
+        } => execute_ibc_return(
+            deps,
+            env,
+            info,
+            collection,
+            receiver_addr,
+            token_id,
+            channel_id,
+        ),
     }
 }
 
@@ -158,6 +190,111 @@ fn split_fund_denom(denom: &String, funds: &[Coin]) -> (Uint128, Vec<Coin>) {
         },
     );
     (amount, others)
+}
+
+fn execute_ibc_tranfer(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    collection: String,
+    receiver_addr: String,
+    token_id: String,
+    channel_id: String,
+) -> ContractResult {
+    if IBC_CHANNEL_INFOS.has(deps.storage, &channel_id) {
+        if get_current_owner(&deps, collection.to_owned(), token_id.to_owned())?
+            != info.sender.to_string()
+        {
+            return Err(ContractError::OnlyOwnerCanIBCSend);
+        }
+        let escrow_msg = CollectionExecuteMsg::TransferNft {
+            recipient: env.contract.address.to_string(),
+            token_id: token_id.to_owned(),
+        };
+        let transfer_msg = IbcMessage::TransferName {
+            collection: collection.to_owned(),
+            token_id,
+            sender_addr: info.sender.to_string(),
+            receiver_addr,
+        };
+        let transfer_packet = IbcMsg::SendPacket {
+            channel_id,
+            data: to_json_binary(&transfer_msg)?,
+            timeout: IbcTimeout::with_timestamp(env.block.time.plus_seconds(120)),
+        };
+        Ok(
+            execute_pass_through(deps, env, info, collection, escrow_msg)?
+                .add_message(transfer_packet),
+        )
+    } else {
+        Err(ContractError::UnkownChannel { channel_id })
+    }
+}
+
+fn execute_ibc_return(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    collection: String,
+    receiver_addr: String,
+    token_id: String,
+    channel_id: String,
+) -> ContractResult {
+    if IBC_CHANNEL_INFOS.has(deps.storage, &channel_id) {
+        let voucher_collection: String = VOUCHERS_COLLECTION_ADDR.load(deps.storage)?;
+        let voucher_token_id = voucher_token_id(&channel_id, &collection, &token_id);
+        if get_current_owner(
+            &deps,
+            voucher_collection.to_owned(),
+            voucher_token_id.to_owned(),
+        )? != info.sender.to_string()
+        {
+            return Err(ContractError::OnlyOwnerCanIBCSend);
+        }
+        let escrow_msg = CollectionExecuteMsg::TransferNft {
+            recipient: env.contract.address.to_string(),
+            token_id: voucher_token_id,
+        };
+        let escrow_event = Event::new("ibc-voucher-escrow")
+            .add_attribute("channel", channel_id.to_owned())
+            .add_attribute("original-collection", collection.to_owned())
+            .add_attribute("token_id", token_id.to_owned());
+        let return_msg = IbcMessage::ReturnName {
+            collection,
+            token_id,
+            sender_addr: info.sender.to_string(),
+            receiver_addr: receiver_addr.to_owned(),
+        };
+        let return_packet = IbcMsg::SendPacket {
+            channel_id,
+            data: to_json_binary(&return_msg)?,
+            timeout: IbcTimeout::with_timestamp(env.block.time.plus_seconds(120)),
+        };
+        Ok(
+            execute_pass_through(deps, env, info, voucher_collection, escrow_msg)?
+                .add_event(escrow_event)
+                .add_message(return_packet),
+        )
+    } else {
+        Err(ContractError::UnkownChannel { channel_id })
+    }
+}
+
+fn get_current_owner(
+    deps: &DepsMut,
+    collection: String,
+    token_id: String,
+) -> Result<String, ContractError> {
+    Ok(deps
+        .querier
+        .query::<OwnerOfResponse>(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: collection,
+            msg: to_json_binary(&CollectionQueryMsg::OwnerOf {
+                token_id,
+                include_expired: None,
+            })?,
+        }))?
+        .owner)
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]

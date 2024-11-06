@@ -16,3 +16,4 @@ pub struct ChannelInfo {
 
 pub const PAYMENT_PARAMS: Item<PaymentParams> = Item::new("payment_params");
 pub const IBC_CHANNEL_INFOS: Map<&str, ChannelInfo> = Map::new("ibc_channel_infos");
+pub const VOUCHERS_COLLECTION_ADDR: Item<String> = Item::new("vouchers_collection_addr");
