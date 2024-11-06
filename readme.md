@@ -28,3 +28,4 @@ Branches:
 * [`payment-params-query`](../../tree/payment-params-query), [diff](../../compare/proper-fund-handling..payment-params-query)
 * [`sudo-message`](../../tree/sudo-message), [diff](../../compare/payment-params-query..sudo-message)
 * [`migrate-function`](../../tree/migrate-function), [diff](../../compare/sudo-message..migrate-function)
+* [`ibc-channel`](../../tree/ibc-channel), [diff](../../compare/migrate-function..ibc-channel)
