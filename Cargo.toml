@@ -1,5 +1,5 @@
 [package]
-name = "my-collection-manager"
+name = "cw-my-collection-manager"
 version = "0.1.0"
 edition = "2021"
 
@@ -31,4 +31,4 @@ thiserror = "1.0.63"
 
 [dev-dependencies]
 cw-multi-test = "1.2.0"
-my-nameservice = { path = "../my-nameservice", package = "my-nameservice" }
+cw-my-nameservice = { path = "../cw-my-nameservice", package = "cw-my-nameservice" }

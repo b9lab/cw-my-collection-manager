@@ -238,6 +238,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "cw-my-collection-manager"
+version = "0.1.0"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cw-multi-test",
+ "cw-my-nameservice",
+ "cw721 0.19.0",
+ "thiserror",
+]
+
+[[package]]
+name = "cw-my-nameservice"
+version = "0.1.0"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cw721 0.19.0",
+ "thiserror",
+]
+
+[[package]]
 name = "cw-ownable"
 version = "0.6.0"
 source = "git+https://github.com/public-awesome/cw-plus-plus.git?rev=28c1a09bfc6b4f1942fefe3eb0b50faf9d3b1523#28c1a09bfc6b4f1942fefe3eb0b50faf9d3b1523"
@@ -625,28 +647,6 @@ name = "memchr"
 version = "2.7.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "78ca9ab1a0babb1e7d5695e3530886289c18cf2f87ec19a575a0abdce112e3a3"
-
-[[package]]
-name = "my-collection-manager"
-version = "0.1.0"
-dependencies = [
- "cosmwasm-schema",
- "cosmwasm-std",
- "cw-multi-test",
- "cw721 0.19.0",
- "my-nameservice",
- "thiserror",
-]
-
-[[package]]
-name = "my-nameservice"
-version = "0.1.0"
-dependencies = [
- "cosmwasm-schema",
- "cosmwasm-std",
- "cw721 0.19.0",
- "thiserror",
-]
 
 [[package]]
 name = "once_cell"

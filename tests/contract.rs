@@ -1,11 +1,11 @@
 use cosmwasm_std::{to_json_binary, Addr, Empty, Event};
 use cw721::msg::{Cw721ExecuteMsg, Cw721QueryMsg, OwnerOfResponse};
 use cw_multi_test::{App, ContractWrapper, Executor};
-use my_collection_manager::{
+use cw_my_collection_manager::{
     contract::{execute, instantiate},
     msg::{ExecuteMsg, InstantiateMsg},
 };
-use my_nameservice::{
+use cw_my_nameservice::{
     contract::{
         execute as execute_my_nameservice, instantiate as instantiate_my_nameservice,
         query as query_my_nameservice,
